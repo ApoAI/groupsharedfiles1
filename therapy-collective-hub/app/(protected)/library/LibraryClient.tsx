@@ -229,7 +229,7 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                 >
                   <Link href={`/resource/${resource.id}`}>
                     <div className="bg-white rounded-3xl border border-[#E8E6E1] shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col group overflow-hidden">
-                      {/* Image Thumbnail: blob image or OG image */}
+                      {/* Image Thumbnail: blob image, OG image, or site screenshot */}
                       {resource.blobUrl && isImageUrl(resource.blobUrl) ? (
                         <div className="w-full h-40 bg-[#F9F8F6] overflow-hidden">
                           <img
@@ -238,10 +238,10 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
-                      ) : resource.ogImage ? (
+                      ) : resource.url ? (
                         <div className="w-full h-36 bg-[#F0EFEA] overflow-hidden">
                           <img
-                            src={resource.ogImage}
+                            src={resource.ogImage || `https://image.thum.io/get/width/600/${resource.url}`}
                             alt=""
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}

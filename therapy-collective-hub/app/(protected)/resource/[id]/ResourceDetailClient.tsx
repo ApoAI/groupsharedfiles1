@@ -52,6 +52,12 @@ const getYouTubeEmbedUrl = (url: string) => {
   return match ? `https://www.youtube.com/embed/${match[1]}` : null;
 };
 
+const getPreviewImageUrl = (resource: any) => {
+  if (resource.ogImage) return resource.ogImage;
+  if (resource.url) return `https://image.thum.io/get/width/600/${resource.url}`;
+  return null;
+};
+
 export default function ResourceDetailClient({ initialResource }: { initialResource: any }) {
   const router = useRouter();
   const [resource, setResource] = useState(initialResource);
@@ -378,11 +384,11 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                   rel="noopener noreferrer"
                   className="mb-6 block rounded-2xl border border-[#E8E6E1] overflow-hidden hover:border-[#8F9F8A] hover:shadow-md transition-all group/link"
                 >
-                  {/* OG Image */}
-                  {resource.ogImage && (
+                  {/* Website Preview Image */}
+                  {getPreviewImageUrl(resource) && (
                     <div className="w-full h-48 bg-[#F0EFEA] overflow-hidden">
                       <img
-                        src={resource.ogImage}
+                        src={getPreviewImageUrl(resource)}
                         alt=""
                         className="w-full h-full object-cover group-hover/link:scale-105 transition-transform duration-300"
                         onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
@@ -423,7 +429,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                   <img
                     src={getBlobProxyUrl(resource.blobUrl)}
                     alt={resource.title}
-                    className="w-full max-h-[400px] object-cover bg-[#F9F8F6]"
+                    className="w-full object-contain bg-[#F9F8F6]"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors flex items-center justify-center">
                     <div className="opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/60 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
