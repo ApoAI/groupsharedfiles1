@@ -3,11 +3,11 @@ import { db } from '@/db';
 import { resources } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { type } = await request.json();
-    
+
     if (type !== 'like' && type !== 'love') {
       return NextResponse.json({ error: 'Invalid reaction type' }, { status: 400 });
     }
