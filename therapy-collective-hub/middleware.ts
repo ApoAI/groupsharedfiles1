@@ -4,27 +4,42 @@ import { verifyToken } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
-  const isLoginPage = request.nextUrl.pathname === '/login';
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
+  const { pathname } = request.nextUrl;
 
-  // Allow public access to login page and static assets
-  if (isLoginPage || request.nextUrl.pathname.startsWith('/_next') || request.nextUrl.pathname.includes('.')) {
+  // Allow static assets always
+  if (pathname.startsWith('/_next') || pathname.includes('.')) {
     return NextResponse.next();
   }
 
-  // Allow seed route and auth login for easy setup
-  if (request.nextUrl.pathname === '/api/seed' || request.nextUrl.pathname === '/api/auth/login' || request.nextUrl.pathname === '/api/auth/logout' || request.nextUrl.pathname === '/api/migrate') {
+  // Allow public API routes (auth endpoints & migration)
+  if (pathname === '/api/auth/login' || pathname === '/api/auth/logout' || pathname === '/api/seed' || pathname === '/api/migrate') {
     return NextResponse.next();
   }
 
   const payload = token ? await verifyToken(token) : null;
 
+  // Root path: redirect to library if authenticated, login if not
+  if (pathname === '/') {
+    if (payload) {
+      return NextResponse.redirect(new URL('/library', request.url));
+    }
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Login page: redirect to library if already authenticated
+  if (pathname === '/login') {
+    if (payload) {
+      return NextResponse.redirect(new URL('/library', request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // All other routes: require authentication
   if (!payload) {
-    if (isApiRoute) {
+    if (pathname.startsWith('/api')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
