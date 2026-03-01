@@ -260,9 +260,9 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                             </span>
                           </div>
                           {resource.folder && (
-                            <div className="flex items-center space-x-1 bg-[#F9F8F6] px-2 py-1 rounded-lg text-xs text-[#6B6B6B]">
+                            <div className="flex flex-shrink-0 items-center space-x-1.5 bg-[#F9F8F6] px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#6B6B6B] border border-[#E8E6E1]">
                               <span>{resource.folder.emoji}</span>
-                              <span className="max-w-[80px] truncate">{resource.folder.name}</span>
+                              <span className="break-words max-w-[140px] leading-tight">{resource.folder.name}</span>
                             </div>
                           )}
                         </div>
