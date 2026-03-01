@@ -301,25 +301,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
         </AnimatePresence>
 
         <div className="relative z-10">
-          {/* Edit/Delete buttons */}
-          <div className="flex justify-end gap-2 mb-4">
-            {!isEditing && (
-              <>
-                <button
-                  onClick={startEditing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#6B6B6B] hover:text-[#4A4A4A] bg-[#F0EFEA] hover:bg-[#E8E6E1] rounded-xl transition-colors"
-                >
-                  <Edit3 className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#6B6B6B] hover:text-red-500 bg-[#F0EFEA] hover:bg-red-50 rounded-xl transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
-              </>
-            )}
-          </div>
+          {/* Removed top action buttons */}
 
           {isEditing ? (
             /* Edit Mode */
@@ -640,24 +622,29 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  {resource.url && (
-                    <a
-                      href={resource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-6 py-3 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white rounded-xl font-medium transition-colors"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                      Open Link
-                    </a>
+                <div className="flex flex-wrap items-center gap-3">
+                  {!isEditing && (
+                    <>
+                      <button
+                        onClick={startEditing}
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#6B6B6B] hover:text-[#4A4A4A] border border-[#E8E6E1] bg-white hover:bg-[#F9F8F6] rounded-xl transition-colors"
+                      >
+                        <Edit3 className="w-4 h-4" /> Edit
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#6B6B6B] hover:text-red-500 border border-[#E8E6E1] bg-white hover:bg-red-50 hover:border-red-100 rounded-xl transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete
+                      </button>
+                    </>
                   )}
                   {resource.blobUrl && (
                     <a
                       href={getBlobProxyUrl(resource.blobUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-6 py-3 bg-white border border-[#E8E6E1] hover:bg-[#F9F8F6] text-[#4A4A4A] rounded-xl font-medium transition-colors"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white rounded-xl font-medium transition-colors"
                     >
                       <Download className="w-5 h-5" />
                       {isImageUrl(resource.blobUrl) ? 'View Full Size' : 'Download File'}
