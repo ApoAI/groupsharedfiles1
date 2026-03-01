@@ -45,16 +45,20 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
     url: '',
     description: '',
     tags: '',
-    category: CATEGORIES[0],
+    category: '',
     format: FORMATS[0],
     addedBy: '',
     folderId: '',
   });
 
-  const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch('/api/categories').then(r => r.json()).then(setAllCategories).catch(() => { });
+    fetch('/api/categories').then(r => r.json()).then(cats => {
+      setAllCategories(cats);
+      // Initialize category once fetched so we don't submit empty category
+      setFormData(prev => ({ ...prev, category: prev.category || cats[0] || '' }));
+    }).catch(() => { });
   }, []);
 
   const handleUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -98,7 +98,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [removeExistingFile, setRemoveExistingFile] = useState(false);
-  const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editData, setEditData] = useState({
     title: '',

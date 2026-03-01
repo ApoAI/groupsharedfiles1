@@ -30,7 +30,7 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
-  const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [removeMode, setRemoveMode] = useState(false);

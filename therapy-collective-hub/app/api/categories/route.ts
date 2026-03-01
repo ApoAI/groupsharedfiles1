@@ -4,16 +4,29 @@ import { categories, resources } from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { CATEGORIES } from '@/lib/config';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const dbCategories = await db.select().from(categories).orderBy(asc(categories.name));
         const dbNames = dbCategories.map(c => c.name);
-        // Merge defaults + custom, deduplicated
-        const allNames = [...new Set([...CATEGORIES, ...dbNames])].sort();
-        return NextResponse.json(allNames);
+
+        if (!dbNames.includes('__MIGRATED__')) {
+            // Unmigrated state: Insert missing defaults
+            const missingDefaults = CATEGORIES.filter(c => !dbNames.includes(c));
+            if (missingDefaults.length > 0) {
+                await db.insert(categories).values(missingDefaults.map(name => ({ name }))).onConflictDoNothing();
+            }
+            // Insert the flag
+            await db.insert(categories).values({ name: '__MIGRATED__' }).onConflictDoNothing();
+
+            const finalCategories = await db.select().from(categories).orderBy(asc(categories.name));
+            return NextResponse.json(finalCategories.filter(c => c.name !== '__MIGRATED__').map(c => c.name));
+        }
+
+        return NextResponse.json(dbNames.filter(name => name !== '__MIGRATED__'));
     } catch (error) {
         console.error('Error fetching categories:', error);
-        // Fallback to defaults
         return NextResponse.json(CATEGORIES);
     }
 }
