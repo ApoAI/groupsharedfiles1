@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Allow seed route and auth login for easy setup
-  if (request.nextUrl.pathname === '/api/seed' || request.nextUrl.pathname === '/api/auth/login' || request.nextUrl.pathname === '/api/auth/logout') {
+  if (request.nextUrl.pathname === '/api/seed' || request.nextUrl.pathname === '/api/auth/login' || request.nextUrl.pathname === '/api/auth/logout' || request.nextUrl.pathname === '/api/migrate') {
     return NextResponse.next();
   }
 
