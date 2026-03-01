@@ -33,6 +33,8 @@ const getFileName = (url: string) => {
   }
 };
 
+const getBlobProxyUrl = (url: string) => `/api/blob?url=${encodeURIComponent(url)}`;
+
 export default function ResourceDetailClient({ initialResource }: { initialResource: any }) {
   const router = useRouter();
   const [resource, setResource] = useState(initialResource);
@@ -369,7 +371,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
               {resource.blobUrl && isImageUrl(resource.blobUrl) && (
                 <div className="mb-6 rounded-2xl overflow-hidden border border-[#E8E6E1]">
                   <img
-                    src={resource.blobUrl}
+                    src={getBlobProxyUrl(resource.blobUrl)}
                     alt={resource.title}
                     className="w-full max-h-[500px] object-contain bg-[#F9F8F6]"
                   />
@@ -387,7 +389,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                     <p className="text-xs text-[#8C8C8C]">Attached file</p>
                   </div>
                   <a
-                    href={resource.blobUrl}
+                    href={getBlobProxyUrl(resource.blobUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white text-sm rounded-xl font-medium transition-colors"
@@ -456,7 +458,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                   )}
                   {resource.blobUrl && (
                     <a
-                      href={resource.blobUrl}
+                      href={getBlobProxyUrl(resource.blobUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-6 py-3 bg-white border border-[#E8E6E1] hover:bg-[#F9F8F6] text-[#4A4A4A] rounded-xl font-medium transition-colors"
