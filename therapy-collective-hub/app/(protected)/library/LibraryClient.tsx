@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle } from 'lucide-react';
+import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle, Leaf } from 'lucide-react';
 import { CATEGORIES, FORMATS } from '@/lib/config';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -32,8 +32,8 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
 
     if (search) {
       const lowerSearch = search.toLowerCase();
-      result = result.filter(r => 
-        r.title.toLowerCase().includes(lowerSearch) || 
+      result = result.filter(r =>
+        r.title.toLowerCase().includes(lowerSearch) ||
         r.description?.toLowerCase().includes(lowerSearch) ||
         r.tags?.some((t: string) => t.toLowerCase().includes(lowerSearch))
       );
@@ -73,7 +73,7 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
           <h1 className="text-3xl font-serif text-[#4A4A4A]">Resource Library</h1>
           <p className="text-[#8C8C8C] mt-1">A curated collection of tools and insights.</p>
         </div>
-        
+
         <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C8C8C]" />
@@ -85,7 +85,7 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
               className="w-full pl-9 pr-4 py-2 rounded-xl border border-[#E8E6E1] bg-white focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 focus:border-[#8F9F8A] transition-all"
             />
           </div>
-          
+
           <div className="flex gap-2">
             <select
               value={sortBy}
@@ -104,9 +104,8 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-            !selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'
-          }`}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${!selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'
+            }`}
         >
           All Categories
         </button>
@@ -114,9 +113,8 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              cat === selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'
-            }`}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${cat === selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'
+              }`}
           >
             {cat}
           </button>
@@ -169,15 +167,15 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                           </div>
                         )}
                       </div>
-                      
+
                       <h3 className="text-lg font-medium text-[#4A4A4A] mb-2 line-clamp-2 group-hover:text-[#8F9F8A] transition-colors">
                         {resource.title}
                       </h3>
-                      
+
                       <p className="text-sm text-[#6B6B6B] line-clamp-3 mb-4 flex-grow">
                         {resource.description || 'No description provided.'}
                       </p>
-                      
+
                       <div className="flex flex-wrap gap-1.5 mb-4">
                         {resource.tags?.slice(0, 3).map((tag: string) => (
                           <span key={tag} className="px-2 py-1 bg-[#F9F8F6] rounded-md text-[10px] text-[#8C8C8C] uppercase tracking-wider">
@@ -190,7 +188,7 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center justify-between pt-4 border-t border-[#E8E6E1] text-xs text-[#8C8C8C]">
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center space-x-1">
