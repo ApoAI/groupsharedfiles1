@@ -6,11 +6,38 @@ import { motion } from 'framer-motion';
 import { CATEGORIES, FORMATS } from '@/lib/config';
 import { Leaf, Link as LinkIcon, Upload, Loader2 } from 'lucide-react';
 
+function CircularProgress({ progress }: { progress: number }) {
+  const size = 64;
+  const strokeWidth = 5;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#E8E6E1" strokeWidth={strokeWidth} />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke="#8F9F8A" strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-300 ease-out"
+        />
+      </svg>
+      <span className="absolute text-xs font-semibold text-[#4A4A4A]">{Math.round(progress)}%</span>
+    </div>
+  );
+}
+
 export default function SubmitClient({ folders }: { folders: any[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fetchingOg, setFetchingOg] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -58,6 +85,45 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
     }
   };
 
+  const uploadFile = (fileToUpload: File): Promise<string | null> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const uploadPayload = new FormData();
+      uploadPayload.append('file', fileToUpload);
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          setUploadProgress(pct);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            resolve(data.url);
+          } catch {
+            reject(new Error('Invalid response from upload'));
+          }
+        } else {
+          try {
+            const errData = JSON.parse(xhr.responseText);
+            reject(new Error(errData.details || errData.error || 'Upload failed'));
+          } catch {
+            reject(new Error(`Upload failed (${xhr.status})`));
+          }
+        }
+      });
+
+      xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+      xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled')));
+
+      xhr.open('POST', '/api/upload');
+      xhr.send(uploadPayload);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -65,20 +131,18 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
     try {
       let blobUrl = null;
       if (file) {
-        const uploadPayload = new FormData();
-        uploadPayload.append('file', file);
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadPayload,
-        });
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          blobUrl = uploadData.url;
-        } else {
-          alert('File upload failed. Please try again.');
+        setIsUploading(true);
+        setUploadProgress(0);
+        try {
+          blobUrl = await uploadFile(file);
+        } catch (err: any) {
+          alert(`File upload failed: ${err.message}`);
+          setIsUploading(false);
+          setUploadProgress(0);
           setLoading(false);
           return;
         }
+        setIsUploading(false);
       }
 
       const res = await fetch('/api/resources', {
@@ -103,6 +167,7 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
       alert('An error occurred');
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -251,14 +316,21 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
           </div>
 
           <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#8F9F8A] hover:bg-[#7A8A75] text-white font-medium py-4 rounded-xl transition-colors disabled:opacity-70 flex justify-center items-center gap-2 text-lg"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Leaf className="w-5 h-5" />}
-              {loading ? 'Adding to Library...' : 'Add to Library'}
-            </button>
+            {isUploading ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <CircularProgress progress={uploadProgress} />
+                <p className="text-sm text-[#6B6B6B] font-medium">Uploading file...</p>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#8F9F8A] hover:bg-[#7A8A75] text-white font-medium py-4 rounded-xl transition-colors disabled:opacity-70 flex justify-center items-center gap-2 text-lg"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Leaf className="w-5 h-5" />}
+                {loading ? 'Adding to Library...' : 'Add to Library'}
+              </button>
+            )}
           </div>
         </form>
       </motion.div>
