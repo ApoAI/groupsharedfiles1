@@ -1,1 +1,65 @@
 @import "tailwindcss";
+
+/* Typography & Global Styles */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-serif {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus styles */
+*:focus-visible {
+  outline: 2px solid #8F9F8A;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F9F8F6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1CFC9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8F9F8A;
+}
+
+/* Selection color */
+::selection {
+  background-color: #8F9F8A40;
+  color: #4A4A4A;
+}
+
+/* Smooth image loading */
+img {
+  image-rendering: auto;
+}
+
+/* Animate-in for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

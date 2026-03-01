@@ -1,15 +1,23 @@
-import type {Metadata} from 'next';
-import './globals.css'; // Global styles
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'My Google AI Studio App',
-  description: 'My Google AI Studio App',
+  title: 'Therapy Collective Hub',
+  description: 'A peaceful digital sanctuary for shared therapy resources, tools, and inspiration.',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
-export default function RootLayout({children}: {children: React.ReactNode}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body suppressHydrationWarning className="font-sans antialiased">{children}</body>
     </html>
   );
 }
