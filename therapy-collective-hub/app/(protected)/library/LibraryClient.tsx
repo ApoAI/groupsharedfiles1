@@ -239,11 +239,11 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                           />
                         </div>
                       ) : resource.url ? (
-                        <div className="w-full h-36 bg-[#F0EFEA] overflow-hidden">
+                        <div className="w-full h-40 bg-[#F0EFEA] overflow-hidden">
                           <img
-                            src={resource.ogImage || `https://image.thum.io/get/width/600/${resource.url}`}
+                            src={resource.ogImage || `https://image.thum.io/get/width/1200/${resource.url}`}
                             alt=""
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-500"
                             onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
                           />
                         </div>

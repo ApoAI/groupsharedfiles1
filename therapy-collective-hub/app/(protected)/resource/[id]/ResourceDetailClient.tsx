@@ -54,7 +54,7 @@ const getYouTubeEmbedUrl = (url: string) => {
 
 const getPreviewImageUrl = (resource: any) => {
   if (resource.ogImage) return resource.ogImage;
-  if (resource.url) return `https://image.thum.io/get/width/600/${resource.url}`;
+  if (resource.url) return `https://image.thum.io/get/width/1200/${resource.url}`;
   return null;
 };
 
@@ -386,11 +386,11 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                 >
                   {/* Website Preview Image */}
                   {getPreviewImageUrl(resource) && (
-                    <div className="w-full h-48 bg-[#F0EFEA] overflow-hidden">
+                    <div className="w-full h-64 bg-[#F0EFEA] overflow-hidden">
                       <img
                         src={getPreviewImageUrl(resource)}
                         alt=""
-                        className="w-full h-full object-cover group-hover/link:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover object-top group-hover/link:scale-[1.02] transition-transform duration-500"
                         onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
                       />
                     </div>
