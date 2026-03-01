@@ -18,6 +18,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         if (data.addedBy !== undefined) updateData.addedBy = data.addedBy || null;
         if (data.notes !== undefined) updateData.notes = data.notes || null;
         if (data.folderId !== undefined) updateData.folderId = data.folderId || null;
+        if (data.blobUrl !== undefined) updateData.blobUrl = data.blobUrl; // Can be null to remove
 
         const [updated] = await db.update(resources)
             .set(updateData)

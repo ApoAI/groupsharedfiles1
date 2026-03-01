@@ -4,7 +4,32 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus, Edit3, X, Check, AlertTriangle, Paperclip, Maximize2, Globe } from 'lucide-react';
+import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus, Edit3, X, Check, AlertTriangle, Paperclip, Maximize2, Globe, Upload, Loader2 } from 'lucide-react';
+
+function CircularProgress({ progress }: { progress: number }) {
+  const size = 64;
+  const strokeWidth = 5;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#E8E6E1" strokeWidth={strokeWidth} />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke="#8F9F8A" strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-300 ease-out"
+        />
+      </svg>
+      <span className="absolute text-xs font-semibold text-[#4A4A4A]">{Math.round(progress)}%</span>
+    </div>
+  );
+}
 import { CATEGORIES, FORMATS } from '@/lib/config';
 
 const getFormatIcon = (format: string) => {
@@ -67,6 +92,12 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
   const [showHeartBloom, setShowHeartBloom] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // File edit states
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [removeExistingFile, setRemoveExistingFile] = useState(false);
   const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editData, setEditData] = useState({
@@ -97,17 +128,57 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
       addedBy: resource.addedBy || '',
       notes: resource.notes || '',
     });
+    setFile(null);
+    setUploadProgress(0);
+    setIsUploading(false);
+    setRemoveExistingFile(false);
     setIsEditing(true);
+  };
+
+  const uploadFile = async (fileToUpload: File): Promise<string | null> => {
+    const ext = fileToUpload.name.lastIndexOf('.') >= 0 ? fileToUpload.name.slice(fileToUpload.name.lastIndexOf('.')) : '';
+    const baseName = fileToUpload.name.lastIndexOf('.') >= 0 ? fileToUpload.name.slice(0, fileToUpload.name.lastIndexOf('.')) : fileToUpload.name;
+    const uniqueName = `${baseName}-${Date.now()}${ext}`;
+
+    const { upload } = await import('@vercel/blob/client');
+    const blob = await upload(uniqueName, fileToUpload, {
+      access: 'private',
+      handleUploadUrl: '/api/upload',
+      onUploadProgress: (e) => {
+        setUploadProgress(Math.round(e.percentage));
+      },
+    });
+    return blob.url;
   };
 
   const handleSaveEdit = async () => {
     setIsSaving(true);
     try {
+      let finalBlobUrl = resource.blobUrl;
+      if (removeExistingFile) {
+        finalBlobUrl = null;
+      }
+      if (file) {
+        setIsUploading(true);
+        setUploadProgress(0);
+        try {
+          finalBlobUrl = await uploadFile(file);
+        } catch (err: any) {
+          alert(`File upload failed: ${err.message}`);
+          setIsUploading(false);
+          setUploadProgress(0);
+          setIsSaving(false);
+          return;
+        }
+        setIsUploading(false);
+      }
+
       const res = await fetch(`/api/resources/${resource.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editData,
+          blobUrl: finalBlobUrl,
           tags: editData.tags.split(',').map(t => t.trim()).filter(Boolean),
         }),
       });
@@ -280,6 +351,69 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                   className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50"
                 />
               </div>
+
+              {/* Edit Attached File */}
+              <div className="border border-[#E8E6E1] rounded-xl p-4 bg-[#F9F8F6]">
+                <label className="block text-sm font-medium text-[#6B6B6B] mb-2">Attached File</label>
+                {!removeExistingFile && !file && resource.blobUrl ? (
+                  <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#E8E6E1]">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <File className="w-4 h-4 text-[#8F9F8A] flex-shrink-0" />
+                      <span className="text-sm font-medium truncate">{getFileName(resource.blobUrl)}</span>
+                    </div>
+                    <button
+                      onClick={() => setRemoveExistingFile(true)}
+                      className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    {file ? (
+                      <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#8F9F8A]">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <File className="w-4 h-4 text-[#8F9F8A] flex-shrink-0" />
+                          <span className="text-sm font-medium truncate text-[#4A4A4A]">New: {file.name}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setFile(null);
+                            if (resource.blobUrl) setRemoveExistingFile(false);
+                          }}
+                          className="text-[#6B6B6B] hover:bg-[#F0EFEA] p-1.5 rounded-lg transition-colors flex-shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <input
+                          type="file"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              setFile(e.target.files[0]);
+                              setRemoveExistingFile(true); // Effectively replacing the old one
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#D1CFC9] rounded-xl hover:border-[#8F9F8A] bg-white transition-colors">
+                          <Upload className="w-8 h-8 text-[#8F9F8A] mb-2" />
+                          <span className="text-sm font-medium text-[#4A4A4A]">Upload a new file to replace the current one</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {isUploading && (
+                  <div className="mt-4 flex flex-col items-center gap-2">
+                    <CircularProgress progress={uploadProgress} />
+                    <span className="text-xs text-[#6B6B6B]">Uploading...</span>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Category</label>
