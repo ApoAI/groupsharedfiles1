@@ -87,43 +87,21 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
     }
   };
 
-  const uploadFile = (fileToUpload: File): Promise<string | null> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const uploadPayload = new FormData();
-      uploadPayload.append('file', fileToUpload);
+  const uploadFile = async (fileToUpload: File): Promise<string | null> => {
+    // Add unique suffix to prevent name conflicts
+    const ext = fileToUpload.name.lastIndexOf('.') >= 0 ? fileToUpload.name.slice(fileToUpload.name.lastIndexOf('.')) : '';
+    const baseName = fileToUpload.name.lastIndexOf('.') >= 0 ? fileToUpload.name.slice(0, fileToUpload.name.lastIndexOf('.')) : fileToUpload.name;
+    const uniqueName = `${baseName}-${Date.now()}${ext}`;
 
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          setUploadProgress(pct);
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            resolve(data.url);
-          } catch {
-            reject(new Error('Invalid response from upload'));
-          }
-        } else {
-          try {
-            const errData = JSON.parse(xhr.responseText);
-            reject(new Error(errData.details || errData.error || 'Upload failed'));
-          } catch {
-            reject(new Error(`Upload failed (${xhr.status})`));
-          }
-        }
-      });
-
-      xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
-      xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled')));
-
-      xhr.open('POST', '/api/upload');
-      xhr.send(uploadPayload);
+    const { upload } = await import('@vercel/blob/client');
+    const blob = await upload(uniqueName, fileToUpload, {
+      access: 'public',
+      handleUploadUrl: '/api/upload',
+      onUploadProgress: (e) => {
+        setUploadProgress(Math.round(e.percentage));
+      },
     });
+    return blob.url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
