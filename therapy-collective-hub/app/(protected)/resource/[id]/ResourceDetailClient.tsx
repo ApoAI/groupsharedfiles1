@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus } from 'lucide-react';
+import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus, Edit3, X, Check, AlertTriangle } from 'lucide-react';
+import { CATEGORIES, FORMATS } from '@/lib/config';
 
 const getFormatIcon = (format: string) => {
   switch (format) {
@@ -18,14 +20,80 @@ const getFormatIcon = (format: string) => {
   }
 };
 
+const isImageUrl = (url: string) => {
+  return /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)(\?|$)/i.test(url);
+};
+
 export default function ResourceDetailClient({ initialResource }: { initialResource: any }) {
+  const router = useRouter();
   const [resource, setResource] = useState(initialResource);
   const [commentText, setCommentText] = useState('');
   const [commentName, setCommentName] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showHeartBloom, setShowHeartBloom] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    title: '',
+    url: '',
+    description: '',
+    tags: '',
+    category: '',
+    format: '',
+    addedBy: '',
+    notes: '',
+  });
 
   const Icon = getFormatIcon(resource.format);
+
+  const startEditing = () => {
+    setEditData({
+      title: resource.title || '',
+      url: resource.url || '',
+      description: resource.description || '',
+      tags: resource.tags?.join(', ') || '',
+      category: resource.category || '',
+      format: resource.format || '',
+      addedBy: resource.addedBy || '',
+      notes: resource.notes || '',
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/resources/${resource.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...editData,
+          tags: editData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setResource((prev: any) => ({ ...prev, ...updated }));
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Permanently delete this resource and all its comments? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/resources/${resource.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        router.push('/library');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleReaction = async (type: 'like' | 'love', action: 'add' | 'subtract' = 'add') => {
     try {
@@ -122,101 +190,249 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
         </AnimatePresence>
 
         <div className="relative z-10">
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="flex items-center space-x-2 bg-[#F0EFEA] px-3 py-1.5 rounded-xl text-[#8F9F8A]">
-              <Icon className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{resource.format}</span>
-            </div>
-            <div className="bg-[#F9F8F6] px-3 py-1.5 rounded-xl text-xs font-medium text-[#6B6B6B]">
-              {resource.category}
-            </div>
-            {resource.folder && (
-              <div className="flex items-center space-x-1 bg-[#F9F8F6] px-3 py-1.5 rounded-xl text-xs font-medium text-[#6B6B6B]">
-                <span>{resource.folder.emoji}</span>
-                <span>{resource.folder.name}</span>
-              </div>
+          {/* Edit/Delete buttons */}
+          <div className="flex justify-end gap-2 mb-4">
+            {!isEditing && (
+              <>
+                <button
+                  onClick={startEditing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#6B6B6B] hover:text-[#4A4A4A] bg-[#F0EFEA] hover:bg-[#E8E6E1] rounded-xl transition-colors"
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#6B6B6B] hover:text-red-500 bg-[#F0EFEA] hover:bg-red-50 rounded-xl transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              </>
             )}
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-serif text-[#4A4A4A] mb-4 leading-tight">
-            {resource.title}
-          </h1>
-
-          {resource.description && (
-            <p className="text-lg text-[#6B6B6B] mb-8 leading-relaxed">
-              {resource.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-2 mb-8">
-            {resource.tags?.map((tag: string) => (
-              <span key={tag} className="px-3 py-1 bg-[#F9F8F6] rounded-lg text-xs font-medium text-[#8C8C8C] uppercase tracking-wider">
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-[#E8E6E1]">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center rounded-xl overflow-hidden border border-[#E8E6E1]">
-                <button
-                  onClick={() => handleReaction('like', 'subtract')}
-                  className="px-2 py-2 bg-[#F9F8F6] hover:bg-[#E8E6E1] text-[#8C8C8C] transition-colors"
-                  title="Remove like"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleReaction('like')}
-                  className="flex items-center gap-2 px-3 py-2 bg-[#F9F8F6] hover:bg-[#F0EFEA] text-[#6B6B6B] transition-colors"
-                >
-                  <Heart className="w-5 h-5" />
-                  <span className="font-medium">{resource.likeCount}</span>
-                </button>
+          {isEditing ? (
+            /* Edit Mode */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Title</label>
+                <input
+                  type="text"
+                  value={editData.title}
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 text-lg"
+                />
               </div>
-              <div className="flex items-center rounded-xl overflow-hidden border border-pink-100">
+              <div>
+                <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Description</label>
+                <textarea
+                  value={editData.description}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#6B6B6B] mb-1">URL</label>
+                <input
+                  type="url"
+                  value={editData.url}
+                  onChange={(e) => setEditData({ ...editData, url: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Category</label>
+                  <select
+                    value={editData.category}
+                    onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50"
+                  >
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Format</label>
+                  <select
+                    value={editData.format}
+                    onChange={(e) => setEditData({ ...editData, format: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50"
+                  >
+                    {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Added By</label>
+                  <input
+                    type="text"
+                    value={editData.addedBy}
+                    onChange={(e) => setEditData({ ...editData, addedBy: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Tags (comma-separated)</label>
+                <input
+                  type="text"
+                  value={editData.tags}
+                  onChange={(e) => setEditData({ ...editData, tags: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#6B6B6B] mb-1">Private Notes</label>
+                <textarea
+                  value={editData.notes}
+                  onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 resize-none"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => handleReaction('love', 'subtract')}
-                  className="px-2 py-2 bg-pink-50 hover:bg-pink-100 text-pink-300 transition-colors"
-                  title="Remove love"
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 px-6 py-3 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white rounded-xl font-medium transition-colors disabled:opacity-50"
                 >
-                  <Minus className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4" />
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button
-                  onClick={() => handleReaction('love')}
-                  className="flex items-center gap-2 px-3 py-2 bg-pink-50 hover:bg-pink-100 text-pink-500 transition-colors"
+                  onClick={() => setIsEditing(false)}
+                  className="flex items-center gap-2 px-6 py-3 bg-[#F0EFEA] hover:bg-[#E8E6E1] text-[#6B6B6B] rounded-xl font-medium transition-colors"
                 >
-                  <span className="text-xl leading-none">🥰</span>
-                  <span className="font-medium">{resource.loveCount}</span>
+                  <X className="w-4 h-4" />
+                  Cancel
                 </button>
               </div>
             </div>
+          ) : (
+            /* View Mode */
+            <>
+              <div className="flex flex-wrap items-center gap-3 mb-6">
+                <div className="flex items-center space-x-2 bg-[#F0EFEA] px-3 py-1.5 rounded-xl text-[#8F9F8A]">
+                  <Icon className="w-4 h-4" />
+                  <span className="text-xs font-semibold uppercase tracking-wider">{resource.format}</span>
+                </div>
+                <div className="bg-[#F9F8F6] px-3 py-1.5 rounded-xl text-xs font-medium text-[#6B6B6B]">
+                  {resource.category}
+                </div>
+                {resource.folder && (
+                  <div className="flex items-center space-x-1 bg-[#F9F8F6] px-3 py-1.5 rounded-xl text-xs font-medium text-[#6B6B6B]">
+                    <span>{resource.folder.emoji}</span>
+                    <span>{resource.folder.name}</span>
+                  </div>
+                )}
+              </div>
 
-            <div className="flex flex-wrap gap-3">
+              <h1 className="text-3xl md:text-4xl font-serif text-[#4A4A4A] mb-4 leading-tight">
+                {resource.title}
+              </h1>
+
+              {resource.description && (
+                <p className="text-lg text-[#6B6B6B] mb-6 leading-relaxed">
+                  {resource.description}
+                </p>
+              )}
+
+              {/* Visible URL */}
               {resource.url && (
-                <a
-                  href={resource.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-6 py-3 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white rounded-xl font-medium transition-colors"
-                >
-                  <ExternalLink className="w-5 h-5" />
-                  Open Link
-                </a>
+                <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-[#F9F8F6] rounded-xl border border-[#E8E6E1]">
+                  <LinkIcon className="w-4 h-4 text-[#8F9F8A] flex-shrink-0" />
+                  <a
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#8F9F8A] hover:text-[#7A8A75] underline underline-offset-2 truncate"
+                  >
+                    {resource.url}
+                  </a>
+                </div>
               )}
-              {resource.blobUrl && (
-                <a
-                  href={resource.blobUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-6 py-3 bg-white border border-[#E8E6E1] hover:bg-[#F9F8F6] text-[#4A4A4A] rounded-xl font-medium transition-colors"
-                >
-                  <Download className="w-5 h-5" />
-                  Download File
-                </a>
+
+              {/* Inline Image Preview */}
+              {resource.blobUrl && isImageUrl(resource.blobUrl) && (
+                <div className="mb-6 rounded-2xl overflow-hidden border border-[#E8E6E1]">
+                  <img
+                    src={resource.blobUrl}
+                    alt={resource.title}
+                    className="w-full max-h-[500px] object-contain bg-[#F9F8F6]"
+                  />
+                </div>
               )}
-            </div>
-          </div>
+
+              <div className="flex flex-wrap gap-2 mb-8">
+                {resource.tags?.map((tag: string) => (
+                  <span key={tag} className="px-3 py-1 bg-[#F9F8F6] rounded-lg text-xs font-medium text-[#8C8C8C] uppercase tracking-wider">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-[#E8E6E1]">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center rounded-xl overflow-hidden border border-[#E8E6E1]">
+                    <button
+                      onClick={() => handleReaction('like', 'subtract')}
+                      className="px-2 py-2 bg-[#F9F8F6] hover:bg-[#E8E6E1] text-[#8C8C8C] transition-colors"
+                      title="Remove like"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleReaction('like')}
+                      className="flex items-center gap-2 px-3 py-2 bg-[#F9F8F6] hover:bg-[#F0EFEA] text-[#6B6B6B] transition-colors"
+                    >
+                      <Heart className="w-5 h-5" />
+                      <span className="font-medium">{resource.likeCount}</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center rounded-xl overflow-hidden border border-pink-100">
+                    <button
+                      onClick={() => handleReaction('love', 'subtract')}
+                      className="px-2 py-2 bg-pink-50 hover:bg-pink-100 text-pink-300 transition-colors"
+                      title="Remove love"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleReaction('love')}
+                      className="flex items-center gap-2 px-3 py-2 bg-pink-50 hover:bg-pink-100 text-pink-500 transition-colors"
+                    >
+                      <span className="text-xl leading-none">🥰</span>
+                      <span className="font-medium">{resource.loveCount}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {resource.url && (
+                    <a
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-6 py-3 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white rounded-xl font-medium transition-colors"
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                      Open Link
+                    </a>
+                  )}
+                  {resource.blobUrl && (
+                    <a
+                      href={resource.blobUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-6 py-3 bg-white border border-[#E8E6E1] hover:bg-[#F9F8F6] text-[#4A4A4A] rounded-xl font-medium transition-colors"
+                    >
+                      <Download className="w-5 h-5" />
+                      {isImageUrl(resource.blobUrl) ? 'View Full Size' : 'Download File'}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
 

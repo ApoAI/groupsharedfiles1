@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle, Leaf } from 'lucide-react';
+import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle, Leaf, Plus, X } from 'lucide-react';
 import { CATEGORIES, FORMATS } from '@/lib/config';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -26,6 +26,40 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
+  const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  useEffect(() => {
+    fetch('/api/categories').then(r => r.json()).then(setAllCategories).catch(() => { });
+  }, []);
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      if (res.ok) {
+        setAllCategories(prev => [...new Set([...prev, newCategoryName.trim()])].sort());
+        setNewCategoryName('');
+        setShowAddCategory(false);
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteCategory = async (name: string) => {
+    if (!confirm(`Delete category "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/categories?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+      if (res.ok) {
+        setAllCategories(prev => prev.filter(c => c !== name));
+        if (selectedCategory === name) setSelectedCategory(null);
+      }
+    } catch (err) { console.error(err); }
+  };
 
   const filteredResources = useMemo(() => {
     let result = [...initialResources];
@@ -101,25 +135,58 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${!selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'
-            }`}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${!selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'}`}
         >
           All Categories
         </button>
-        {CATEGORIES.slice(0, 6).map(cat => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${cat === selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'
-              }`}
-          >
-            {cat}
-          </button>
+        {allCategories.map(cat => (
+          <div key={cat} className="group/cat relative inline-flex">
+            <button
+              onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${cat === selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'}`}
+            >
+              {cat}
+            </button>
+            {!CATEGORIES.includes(cat) && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
+                className="absolute -top-1 -right-1 w-4 h-4 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/cat:opacity-100 transition-opacity"
+                title="Delete category"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            )}
+          </div>
         ))}
-        {/* Simplified for demo, could add a dropdown for more */}
+        {showAddCategory ? (
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+              placeholder="New category..."
+              className="px-3 py-1 rounded-full text-xs border border-[#8F9F8A] bg-white focus:outline-none focus:ring-1 focus:ring-[#8F9F8A] w-36"
+              autoFocus
+            />
+            <button onClick={handleAddCategory} className="p-1 text-[#8F9F8A] hover:text-[#7A8A75]">
+              <Plus className="w-4 h-4" />
+            </button>
+            <button onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }} className="p-1 text-[#8C8C8C] hover:text-[#4A4A4A]">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowAddCategory(true)}
+            className="px-3 py-1.5 rounded-full text-xs font-medium border border-dashed border-[#8F9F8A] text-[#8F9F8A] hover:bg-[#F0EFEA] transition-colors flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" /> Add
+          </button>
+        )}
       </div>
 
       {/* Grid */}

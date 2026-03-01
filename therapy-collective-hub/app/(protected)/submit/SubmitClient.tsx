@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CATEGORIES, FORMATS } from '@/lib/config';
@@ -11,7 +11,7 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
   const [loading, setLoading] = useState(false);
   const [fetchingOg, setFetchingOg] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     url: '',
@@ -24,10 +24,16 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
     folderId: '',
   });
 
+  const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
+
+  useEffect(() => {
+    fetch('/api/categories').then(r => r.json()).then(setAllCategories).catch(() => { });
+  }, []);
+
   const handleUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setFormData(prev => ({ ...prev, url }));
-    
+
     if (url && url.startsWith('http')) {
       setFetchingOg(true);
       try {
@@ -168,7 +174,7 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 focus:border-[#8F9F8A] transition-all"
               >
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
