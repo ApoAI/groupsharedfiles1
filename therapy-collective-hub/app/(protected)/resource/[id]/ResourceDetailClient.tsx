@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus, Edit3, X, Check, AlertTriangle } from 'lucide-react';
+import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus, Edit3, X, Check, AlertTriangle, Paperclip } from 'lucide-react';
 import { CATEGORIES, FORMATS } from '@/lib/config';
 
 const getFormatIcon = (format: string) => {
@@ -24,6 +24,15 @@ const isImageUrl = (url: string) => {
   return /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)(\?|$)/i.test(url);
 };
 
+const getFileName = (url: string) => {
+  try {
+    const path = new URL(url).pathname;
+    return decodeURIComponent(path.split('/').pop() || 'Attached File');
+  } catch {
+    return 'Attached File';
+  }
+};
+
 export default function ResourceDetailClient({ initialResource }: { initialResource: any }) {
   const router = useRouter();
   const [resource, setResource] = useState(initialResource);
@@ -33,6 +42,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
   const [showHeartBloom, setShowHeartBloom] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
   const [editData, setEditData] = useState({
     title: '',
     url: '',
@@ -43,6 +53,10 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
     addedBy: '',
     notes: '',
   });
+
+  useEffect(() => {
+    fetch('/api/categories').then(r => r.json()).then(setAllCategories).catch(() => { });
+  }, []);
 
   const Icon = getFormatIcon(resource.format);
 
@@ -248,7 +262,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                     onChange={(e) => setEditData({ ...editData, category: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50"
                   >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
@@ -359,6 +373,28 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                     alt={resource.title}
                     className="w-full max-h-[500px] object-contain bg-[#F9F8F6]"
                   />
+                </div>
+              )}
+
+              {/* Non-Image File Attachment */}
+              {resource.blobUrl && !isImageUrl(resource.blobUrl) && (
+                <div className="mb-6 flex items-center gap-3 px-5 py-4 bg-[#F9F8F6] rounded-2xl border border-[#E8E6E1]">
+                  <div className="p-2.5 bg-white rounded-xl border border-[#E8E6E1] text-[#8F9F8A]">
+                    <Paperclip className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#4A4A4A] truncate">{getFileName(resource.blobUrl)}</p>
+                    <p className="text-xs text-[#8C8C8C]">Attached file</p>
+                  </div>
+                  <a
+                    href={resource.blobUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white text-sm rounded-xl font-medium transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
                 </div>
               )}
 

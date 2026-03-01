@@ -65,15 +65,19 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
     try {
       let blobUrl = null;
       if (file) {
-        const formData = new FormData();
-        formData.append('file', file);
+        const uploadPayload = new FormData();
+        uploadPayload.append('file', file);
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
-          body: formData,
+          body: uploadPayload,
         });
         if (uploadRes.ok) {
           const uploadData = await uploadRes.json();
           blobUrl = uploadData.url;
+        } else {
+          alert('File upload failed. Please try again.');
+          setLoading(false);
+          return;
         }
       }
 
@@ -139,6 +143,15 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 className="w-full px-4 py-2.5 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 focus:border-[#8F9F8A] transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#F0EFEA] file:text-[#8F9F8A] hover:file:bg-[#E8E6E1]"
               />
+              {file && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-[#8F9F8A] bg-[#F0EFEA] px-3 py-1.5 rounded-lg">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span className="truncate">{file.name}</span>
+                  <button type="button" onClick={() => setFile(null)} className="ml-auto text-[#8C8C8C] hover:text-red-500">
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

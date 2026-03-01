@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { categories } from '@/db/schema';
+import { categories, resources } from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { CATEGORIES } from '@/lib/config';
 
@@ -42,11 +42,34 @@ export async function DELETE(request: Request) {
         if (!name) {
             return NextResponse.json({ error: 'Category name required' }, { status: 400 });
         }
-        // Only delete custom categories (those in DB), not hardcoded defaults
         await db.delete(categories).where(eq(categories.name, name));
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error deleting category:', error);
         return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request) {
+    try {
+        const { oldName, newName } = await request.json();
+        if (!oldName?.trim() || !newName?.trim()) {
+            return NextResponse.json({ error: 'Both old and new names required' }, { status: 400 });
+        }
+
+        // Update category in categories table (if it exists there)
+        await db.update(categories)
+            .set({ name: newName.trim() })
+            .where(eq(categories.name, oldName.trim()));
+
+        // Update all resources that reference the old category name
+        await db.update(resources)
+            .set({ category: newName.trim() })
+            .where(eq(resources.category, oldName.trim()));
+
+        return NextResponse.json({ success: true, name: newName.trim() });
+    } catch (error) {
+        console.error('Error renaming category:', error);
+        return NextResponse.json({ error: 'Failed to rename category' }, { status: 500 });
     }
 }
