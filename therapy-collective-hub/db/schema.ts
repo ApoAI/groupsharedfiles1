@@ -13,6 +13,7 @@ export const resources = pgTable('resources', {
   title: varchar('title', { length: 255 }).notNull(),
   url: text('url'),
   blobUrl: text('blob_url'),
+  ogImage: text('og_image'),
   description: text('description'),
   tags: text('tags').array(),
   category: varchar('category', { length: 100 }).notNull(),

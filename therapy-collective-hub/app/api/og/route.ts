@@ -11,7 +11,7 @@ export async function POST(request: Request) {
         'User-Agent': 'Mozilla/5.0 (compatible; TherapyCollectiveBot/1.0)',
       },
     });
-    
+
     const html = await response.text();
     const dom = new JSDOM(html);
     const doc = dom.window.document;
@@ -23,8 +23,9 @@ export async function POST(request: Request) {
 
     const title = getMetaContent('title', 'og:title') || doc.title;
     const description = getMetaContent('description', 'og:description');
+    const image = getMetaContent('', 'og:image') || getMetaContent('twitter:image', 'twitter:image');
 
-    return NextResponse.json({ title, description });
+    return NextResponse.json({ title, description, image });
   } catch (error) {
     console.error('Error fetching OG data:', error);
     return NextResponse.json({ error: 'Failed to fetch OG data' }, { status: 500 });

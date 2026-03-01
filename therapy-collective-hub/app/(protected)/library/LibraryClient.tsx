@@ -229,8 +229,8 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                 >
                   <Link href={`/resource/${resource.id}`}>
                     <div className="bg-white rounded-3xl border border-[#E8E6E1] shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col group overflow-hidden">
-                      {/* Image Thumbnail */}
-                      {resource.blobUrl && isImageUrl(resource.blobUrl) && (
+                      {/* Image Thumbnail: blob image or OG image */}
+                      {resource.blobUrl && isImageUrl(resource.blobUrl) ? (
                         <div className="w-full h-40 bg-[#F9F8F6] overflow-hidden">
                           <img
                             src={getBlobProxyUrl(resource.blobUrl)}
@@ -238,7 +238,16 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
-                      )}
+                      ) : resource.ogImage ? (
+                        <div className="w-full h-36 bg-[#F0EFEA] overflow-hidden">
+                          <img
+                            src={resource.ogImage}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
+                          />
+                        </div>
+                      ) : null}
 
                       <div className="p-6 flex flex-col flex-grow">
                         <div className="flex justify-between items-start mb-4">

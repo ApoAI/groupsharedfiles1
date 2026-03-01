@@ -370,27 +370,35 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                 </p>
               )}
 
-              {/* Visible URL - Rich Link Card */}
+              {/* Visible URL - Rich Link Preview (Facebook/WhatsApp style) */}
               {resource.url && (
                 <a
                   href={resource.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mb-6 flex items-center gap-4 px-5 py-4 bg-[#F9F8F6] rounded-2xl border border-[#E8E6E1] hover:border-[#8F9F8A] hover:shadow-sm transition-all group/link"
+                  className="mb-6 block rounded-2xl border border-[#E8E6E1] overflow-hidden hover:border-[#8F9F8A] hover:shadow-md transition-all group/link"
                 >
-                  <div className="w-10 h-10 bg-white rounded-xl border border-[#E8E6E1] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {/* OG Image */}
+                  {resource.ogImage && (
+                    <div className="w-full h-48 bg-[#F0EFEA] overflow-hidden">
+                      <img
+                        src={resource.ogImage}
+                        alt=""
+                        className="w-full h-full object-cover group-hover/link:scale-105 transition-transform duration-300"
+                        onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 px-4 py-3 bg-[#F9F8F6]">
                     <img
                       src={`https://www.google.com/s2/favicons?domain=${getDomain(resource.url)}&sz=32`}
                       alt=""
-                      className="w-5 h-5"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8F9F8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'; }}
+                      className="w-4 h-4 flex-shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
+                    <span className="text-xs font-medium text-[#8C8C8C] uppercase tracking-wider truncate">{getDomain(resource.url)}</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#8C8C8C] group-hover/link:text-[#8F9F8A] flex-shrink-0 ml-auto transition-colors" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#4A4A4A] truncate group-hover/link:text-[#8F9F8A] transition-colors">{resource.title || getDomain(resource.url)}</p>
-                    <p className="text-xs text-[#8C8C8C] truncate">{getDomain(resource.url)}</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-[#8C8C8C] group-hover/link:text-[#8F9F8A] flex-shrink-0 transition-colors" />
                 </a>
               )}
 

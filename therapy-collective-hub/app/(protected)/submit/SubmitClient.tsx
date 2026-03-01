@@ -38,6 +38,7 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [ogImage, setOgImage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -76,6 +77,7 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
             title: prev.title || data.title || '',
             description: prev.description || data.description || '',
           }));
+          if (data.image) setOgImage(data.image);
         }
       } catch (err) {
         console.error('Failed to fetch OG data', err);
@@ -151,6 +153,7 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
         body: JSON.stringify({
           ...formData,
           blobUrl,
+          ogImage,
           tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
           folderId: formData.folderId || null,
         }),

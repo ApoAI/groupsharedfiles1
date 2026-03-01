@@ -10,7 +10,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const blob = await put(file.name, file, { access: 'private' });
+    // Add unique suffix to prevent name conflicts
+    const ext = file.name.lastIndexOf('.') >= 0 ? file.name.slice(file.name.lastIndexOf('.')) : '';
+    const baseName = file.name.lastIndexOf('.') >= 0 ? file.name.slice(0, file.name.lastIndexOf('.')) : file.name;
+    const uniqueName = `${baseName}-${Date.now()}${ext}`;
+
+    const blob = await put(uniqueName, file, { access: 'private' });
 
     return NextResponse.json(blob);
   } catch (error) {

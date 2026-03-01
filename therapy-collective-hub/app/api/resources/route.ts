@@ -9,6 +9,7 @@ export async function POST(request: Request) {
       title: data.title,
       url: data.url || null,
       blobUrl: data.blobUrl || null,
+      ogImage: data.ogImage || null,
       description: data.description || null,
       tags: data.tags || [],
       category: data.category,
