@@ -12,8 +12,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow seed route for easy setup
-  if (request.nextUrl.pathname === '/api/seed') {
+  // Allow seed route and auth login for easy setup
+  if (request.nextUrl.pathname === '/api/seed' || request.nextUrl.pathname === '/api/auth/login') {
     return NextResponse.next();
   }
 
