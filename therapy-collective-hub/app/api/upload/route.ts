@@ -10,9 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const blob = await put(file.name, file, {
-      access: 'public',
-    });
+    const blob = await put(file.name, file, { access: 'private' });
 
     return NextResponse.json(blob);
   } catch (error) {
