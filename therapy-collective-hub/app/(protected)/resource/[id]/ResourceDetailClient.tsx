@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send } from 'lucide-react';
+import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus } from 'lucide-react';
 
 const getFormatIcon = (format: string) => {
   switch (format) {
@@ -27,16 +27,16 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
 
   const Icon = getFormatIcon(resource.format);
 
-  const handleReaction = async (type: 'like' | 'love') => {
+  const handleReaction = async (type: 'like' | 'love', action: 'add' | 'subtract' = 'add') => {
     try {
-      if (type === 'love') setShowHeartBloom(true);
-      
+      if (type === 'love' && action === 'add') setShowHeartBloom(true);
+
       const res = await fetch(`/api/resources/${resource.id}/react`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({ type, action }),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setResource((prev: any) => ({
@@ -45,9 +45,26 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
           loveCount: data.loveCount,
         }));
       }
-      
-      if (type === 'love') {
+
+      if (type === 'love' && action === 'add') {
         setTimeout(() => setShowHeartBloom(false), 1000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('Delete this comment?')) return;
+    try {
+      const res = await fetch(`/api/resources/${resource.id}/comments?commentId=${commentId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setResource((prev: any) => ({
+          ...prev,
+          comments: prev.comments.filter((c: any) => c.id !== commentId),
+        }));
       }
     } catch (err) {
       console.error(err);
@@ -57,7 +74,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    
+
     setIsSubmittingComment(true);
     try {
       const res = await fetch(`/api/resources/${resource.id}/comments`, {
@@ -68,7 +85,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
           name: commentName || 'Anonymous',
         }),
       });
-      
+
       if (res.ok) {
         const newComment = await res.json();
         setResource((prev: any) => ({
@@ -141,20 +158,38 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-[#E8E6E1]">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => handleReaction('like')}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F9F8F6] hover:bg-[#F0EFEA] text-[#6B6B6B] transition-colors"
-              >
-                <Heart className="w-5 h-5" />
-                <span className="font-medium">{resource.likeCount}</span>
-              </button>
-              <button
-                onClick={() => handleReaction('love')}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-500 transition-colors"
-              >
-                <span className="text-xl leading-none">🥰</span>
-                <span className="font-medium">{resource.loveCount}</span>
-              </button>
+              <div className="flex items-center rounded-xl overflow-hidden border border-[#E8E6E1]">
+                <button
+                  onClick={() => handleReaction('like', 'subtract')}
+                  className="px-2 py-2 bg-[#F9F8F6] hover:bg-[#E8E6E1] text-[#8C8C8C] transition-colors"
+                  title="Remove like"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleReaction('like')}
+                  className="flex items-center gap-2 px-3 py-2 bg-[#F9F8F6] hover:bg-[#F0EFEA] text-[#6B6B6B] transition-colors"
+                >
+                  <Heart className="w-5 h-5" />
+                  <span className="font-medium">{resource.likeCount}</span>
+                </button>
+              </div>
+              <div className="flex items-center rounded-xl overflow-hidden border border-pink-100">
+                <button
+                  onClick={() => handleReaction('love', 'subtract')}
+                  className="px-2 py-2 bg-pink-50 hover:bg-pink-100 text-pink-300 transition-colors"
+                  title="Remove love"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleReaction('love')}
+                  className="flex items-center gap-2 px-3 py-2 bg-pink-50 hover:bg-pink-100 text-pink-500 transition-colors"
+                >
+                  <span className="text-xl leading-none">🥰</span>
+                  <span className="font-medium">{resource.loveCount}</span>
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -255,17 +290,24 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                     key={comment.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-4"
+                    className="flex gap-4 group/comment"
                   >
                     <div className="w-10 h-10 rounded-full bg-[#F0EFEA] flex items-center justify-center flex-shrink-0">
                       <User className="w-5 h-5 text-[#8C8C8C]" />
                     </div>
-                    <div>
-                      <div className="flex items-baseline gap-2 mb-1">
+                    <div className="flex-grow">
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-[#4A4A4A]">{comment.name || 'Anonymous'}</span>
                         <span className="text-xs text-[#8C8C8C]">
                           {formatDistanceToNow(new Date(comment.createdAt))} ago
                         </span>
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="ml-auto opacity-0 group-hover/comment:opacity-100 p-1 text-[#8C8C8C] hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          title="Delete comment"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                       <p className="text-[#6B6B6B] text-sm leading-relaxed whitespace-pre-wrap">
                         {comment.text}

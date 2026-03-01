@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { comments } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,5 +18,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } catch (error) {
     console.error('Error adding comment:', error);
     return NextResponse.json({ error: 'Failed to add comment' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const commentId = searchParams.get('commentId');
+
+    if (!commentId) {
+      return NextResponse.json({ error: 'Comment ID required' }, { status: 400 });
+    }
+
+    await db.delete(comments).where(eq(comments.id, commentId));
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return NextResponse.json({ error: 'Failed to delete comment' }, { status: 500 });
   }
 }

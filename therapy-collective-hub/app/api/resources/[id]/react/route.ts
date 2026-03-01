@@ -6,17 +6,20 @@ import { eq, sql } from 'drizzle-orm';
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { type } = await request.json();
+    const { type, action } = await request.json();
 
     if (type !== 'like' && type !== 'love') {
       return NextResponse.json({ error: 'Invalid reaction type' }, { status: 400 });
     }
 
     const field = type === 'like' ? resources.likeCount : resources.loveCount;
+    const columnName = type === 'like' ? 'likeCount' : 'loveCount';
 
     const [updatedResource] = await db.update(resources)
       .set({
-        [type === 'like' ? 'likeCount' : 'loveCount']: sql`${field} + 1`,
+        [columnName]: action === 'subtract'
+          ? sql`GREATEST(${field} - 1, 0)`
+          : sql`${field} + 1`,
       })
       .where(eq(resources.id, id))
       .returning();
