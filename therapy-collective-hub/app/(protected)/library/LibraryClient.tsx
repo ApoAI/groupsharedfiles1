@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle, Leaf, Plus, X, Paperclip, Edit3, Check } from 'lucide-react';
+import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle, Leaf, Plus, X, Paperclip, Trash2 } from 'lucide-react';
 import { CATEGORIES, FORMATS } from '@/lib/config';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -29,8 +29,7 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
   const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [editCategoryName, setEditCategoryName] = useState('');
+  const [removeMode, setRemoveMode] = useState(false);
 
   useEffect(() => {
     fetch('/api/categories').then(r => r.json()).then(setAllCategories).catch(() => { });
@@ -59,25 +58,6 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
       if (res.ok) {
         setAllCategories(prev => prev.filter(c => c !== name));
         if (selectedCategory === name) setSelectedCategory(null);
-      }
-    } catch (err) { console.error(err); }
-  };
-
-  const handleEditCategory = async (oldName: string) => {
-    if (!editCategoryName.trim() || editCategoryName.trim() === oldName) {
-      setEditingCategory(null);
-      return;
-    }
-    try {
-      const res = await fetch('/api/categories', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ oldName, newName: editCategoryName.trim() }),
-      });
-      if (res.ok) {
-        setAllCategories(prev => prev.map(c => c === oldName ? editCategoryName.trim() : c).sort());
-        if (selectedCategory === oldName) setSelectedCategory(editCategoryName.trim());
-        setEditingCategory(null);
       }
     } catch (err) { console.error(err); }
   };
@@ -164,49 +144,21 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
           All Categories
         </button>
         {allCategories.map(cat => (
-          <div key={cat} className="group/cat relative inline-flex">
-            {editingCategory === cat ? (
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={editCategoryName}
-                  onChange={(e) => setEditCategoryName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleEditCategory(cat); if (e.key === 'Escape') setEditingCategory(null); }}
-                  className="px-3 py-1 rounded-full text-xs border border-[#8F9F8A] bg-white focus:outline-none focus:ring-1 focus:ring-[#8F9F8A] w-32"
-                  autoFocus
-                />
-                <button onClick={() => handleEditCategory(cat)} className="p-1 text-[#8F9F8A] hover:text-[#7A8A75]" title="Save">
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => setEditingCategory(null)} className="p-1 text-[#8C8C8C] hover:text-[#4A4A4A]" title="Cancel">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${cat === selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'}`}
-                >
-                  {cat}
-                </button>
-                <div className="absolute -top-1 -right-1 flex gap-0.5 opacity-0 group-hover/cat:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setEditingCategory(cat); setEditCategoryName(cat); }}
-                    className="w-4 h-4 bg-[#8F9F8A] hover:bg-[#7A8A75] text-white rounded-full flex items-center justify-center"
-                    title="Rename category"
-                  >
-                    <Edit3 className="w-2.5 h-2.5" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
-                    className="w-4 h-4 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center"
-                    title="Delete category"
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-              </>
+          <div key={cat} className="relative inline-flex">
+            <button
+              onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${cat === selectedCategory ? 'bg-[#8F9F8A] text-white' : 'bg-white border border-[#E8E6E1] text-[#6B6B6B] hover:bg-[#F0EFEA]'}`}
+            >
+              {cat}
+            </button>
+            {removeMode && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
+                className="absolute -top-1 -right-1 w-4 h-4 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center animate-pulse"
+                title="Delete category"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
             )}
           </div>
         ))}
@@ -236,6 +188,12 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
             <Plus className="w-3 h-3" /> Add
           </button>
         )}
+        <button
+          onClick={() => setRemoveMode(!removeMode)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${removeMode ? 'bg-red-100 text-red-500 border border-red-200' : 'border border-dashed border-red-300 text-red-400 hover:bg-red-50'}`}
+        >
+          <Trash2 className="w-3 h-3" /> {removeMode ? 'Done' : 'Remove'}
+        </button>
       </div>
 
       {/* Grid */}
