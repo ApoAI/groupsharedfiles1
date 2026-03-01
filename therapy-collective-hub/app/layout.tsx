@@ -4,6 +4,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Therapy Collective Hub',
   description: 'A peaceful digital sanctuary for shared therapy resources, tools, and inspiration.',
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  },
   icons: {
     icon: '/favicon.ico',
   },
