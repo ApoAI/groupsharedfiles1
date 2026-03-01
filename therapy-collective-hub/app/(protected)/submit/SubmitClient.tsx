@@ -94,7 +94,7 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
 
     const { upload } = await import('@vercel/blob/client');
     const blob = await upload(uniqueName, fileToUpload, {
-      access: 'public',
+      access: 'private',
       handleUploadUrl: '/api/upload',
       onUploadProgress: (e) => {
         setUploadProgress(Math.round(e.percentage));
