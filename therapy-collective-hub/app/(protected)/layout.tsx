@@ -2,13 +2,23 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Leaf, Library, PlusCircle, FolderHeart, Info, Menu, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Leaf, Library, PlusCircle, FolderHeart, Info, Menu, X, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
+  };
 
   const navItems = [
     { name: 'Library', href: '/library', icon: Library },
@@ -43,15 +53,22 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center space-x-1 text-sm font-medium transition-colors ${
-                      isActive ? 'text-[#8F9F8A]' : 'text-[#8C8C8C] hover:text-[#4A4A4A]'
-                    }`}
+                    className={`flex items-center space-x-1 text-sm font-medium transition-colors ${isActive ? 'text-[#8F9F8A]' : 'text-[#8C8C8C] hover:text-[#4A4A4A]'
+                      }`}
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.name}</span>
                   </Link>
                 );
               })}
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-1 text-sm font-medium text-[#8C8C8C] hover:text-red-500 transition-colors ml-2"
+                title="Log out"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Log Out</span>
+              </button>
             </nav>
 
             {/* Mobile Menu Button */}
@@ -81,15 +98,21 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                       key={item.name}
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center space-x-3 px-3 py-3 rounded-xl text-base font-medium ${
-                        isActive ? 'bg-[#F0EFEA] text-[#8F9F8A]' : 'text-[#6B6B6B] hover:bg-[#F9F8F6]'
-                      }`}
+                      className={`flex items-center space-x-3 px-3 py-3 rounded-xl text-base font-medium ${isActive ? 'bg-[#F0EFEA] text-[#8F9F8A]' : 'text-[#6B6B6B] hover:bg-[#F9F8F6]'
+                        }`}
                     >
                       <item.icon className="w-5 h-5" />
                       <span>{item.name}</span>
                     </Link>
                   );
                 })}
+                <button
+                  onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}
+                  className="flex items-center space-x-3 px-3 py-3 rounded-xl text-base font-medium text-[#6B6B6B] hover:bg-red-50 hover:text-red-500 transition-colors mt-2 border-t border-[#E8E6E1] pt-3 w-full"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>Log Out</span>
+                </button>
               </div>
             </motion.div>
           )}
