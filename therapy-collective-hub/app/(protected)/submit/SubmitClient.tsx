@@ -48,7 +48,6 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
     category: CATEGORIES[0],
     format: FORMATS[0],
     addedBy: '',
-    notes: '',
     folderId: '',
   });
 
@@ -282,18 +281,6 @@ export default function SubmitClient({ folders }: { folders: any[] }) {
                 className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 focus:border-[#8F9F8A] transition-all"
               />
             </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-[#6B6B6B] mb-2">Private Notes (Optional)</label>
-            <textarea
-              rows={2}
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Any context for the collective?"
-              className="w-full px-4 py-3 rounded-xl border border-[#E8E6E1] bg-[#FCFCFB] focus:outline-none focus:ring-2 focus:ring-[#8F9F8A]/50 focus:border-[#8F9F8A] transition-all resize-none"
-            />
           </div>
 
           <div className="pt-4">
