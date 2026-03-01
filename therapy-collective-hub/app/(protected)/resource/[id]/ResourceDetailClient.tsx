@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus, Edit3, X, Check, AlertTriangle, Paperclip } from 'lucide-react';
+import { ExternalLink, Heart, MessageCircle, Download, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, User, Send, Trash2, Minus, Edit3, X, Check, AlertTriangle, Paperclip, Maximize2, Globe } from 'lucide-react';
 import { CATEGORIES, FORMATS } from '@/lib/config';
 
 const getFormatIcon = (format: string) => {
@@ -35,6 +35,23 @@ const getFileName = (url: string) => {
 
 const getBlobProxyUrl = (url: string) => `/api/blob?url=${encodeURIComponent(url)}`;
 
+const getDomain = (url: string) => {
+  try {
+    return new URL(url).hostname.replace('www.', '');
+  } catch {
+    return '';
+  }
+};
+
+const isVideoUrl = (url: string) => {
+  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url) || /youtube\.com|youtu\.be|vimeo\.com/i.test(url);
+};
+
+const getYouTubeEmbedUrl = (url: string) => {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+};
+
 export default function ResourceDetailClient({ initialResource }: { initialResource: any }) {
   const router = useRouter();
   const [resource, setResource] = useState(initialResource);
@@ -45,6 +62,7 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [allCategories, setAllCategories] = useState<string[]>(CATEGORIES);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [editData, setEditData] = useState({
     title: '',
     url: '',
@@ -352,29 +370,59 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
                 </p>
               )}
 
-              {/* Visible URL */}
+              {/* Visible URL - Rich Link Card */}
               {resource.url && (
-                <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-[#F9F8F6] rounded-xl border border-[#E8E6E1]">
-                  <LinkIcon className="w-4 h-4 text-[#8F9F8A] flex-shrink-0" />
-                  <a
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#8F9F8A] hover:text-[#7A8A75] underline underline-offset-2 truncate"
-                  >
-                    {resource.url}
-                  </a>
+                <a
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-6 flex items-center gap-4 px-5 py-4 bg-[#F9F8F6] rounded-2xl border border-[#E8E6E1] hover:border-[#8F9F8A] hover:shadow-sm transition-all group/link"
+                >
+                  <div className="w-10 h-10 bg-white rounded-xl border border-[#E8E6E1] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${getDomain(resource.url)}&sz=32`}
+                      alt=""
+                      className="w-5 h-5"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8F9F8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'; }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#4A4A4A] truncate group-hover/link:text-[#8F9F8A] transition-colors">{resource.title || getDomain(resource.url)}</p>
+                    <p className="text-xs text-[#8C8C8C] truncate">{getDomain(resource.url)}</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#8C8C8C] group-hover/link:text-[#8F9F8A] flex-shrink-0 transition-colors" />
+                </a>
+              )}
+
+              {/* YouTube Embed */}
+              {resource.url && getYouTubeEmbedUrl(resource.url) && (
+                <div className="mb-6 rounded-2xl overflow-hidden border border-[#E8E6E1] aspect-video">
+                  <iframe
+                    src={getYouTubeEmbedUrl(resource.url)!}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
                 </div>
               )}
 
-              {/* Inline Image Preview */}
+              {/* Inline Image Preview - Reddit/Facebook style */}
               {resource.blobUrl && isImageUrl(resource.blobUrl) && (
-                <div className="mb-6 rounded-2xl overflow-hidden border border-[#E8E6E1]">
+                <div
+                  className="mb-6 rounded-2xl overflow-hidden border border-[#E8E6E1] cursor-pointer relative group/img"
+                  onClick={() => setLightboxOpen(true)}
+                >
                   <img
                     src={getBlobProxyUrl(resource.blobUrl)}
                     alt={resource.title}
-                    className="w-full max-h-[500px] object-contain bg-[#F9F8F6]"
+                    className="w-full max-h-[400px] object-cover bg-[#F9F8F6]"
                   />
+                  <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors flex items-center justify-center">
+                    <div className="opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/60 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+                      <Maximize2 className="w-4 h-4" />
+                      Click to view full size
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -617,6 +665,35 @@ export default function ResourceDetailClient({ initialResource }: { initialResou
           </div>
         </motion.div>
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxOpen && resource.blobUrl && isImageUrl(resource.blobUrl) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              src={getBlobProxyUrl(resource.blobUrl)}
+              alt={resource.title}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

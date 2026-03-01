@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle, Leaf, Plus, X, Paperclip, Trash2 } from 'lucide-react';
+import { Search, Filter, ArrowDownUp, FileText, Video, Headphones, BookOpen, Link as LinkIcon, Image as ImageIcon, File, Heart, MessageCircle, Leaf, Plus, X, Paperclip, Trash2, Globe, ExternalLink } from 'lucide-react';
 import { CATEGORIES, FORMATS } from '@/lib/config';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -19,6 +19,10 @@ const getFormatIcon = (format: string) => {
     default: return File;
   }
 };
+
+const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)(\?|$)/i.test(url);
+const getBlobProxyUrl = (url: string) => `/api/blob?url=${encodeURIComponent(url)}`;
+const getDomain = (url: string) => { try { return new URL(url).hostname.replace('www.', ''); } catch { return ''; } };
 
 export default function LibraryClient({ initialResources, folders }: { initialResources: any[], folders: any[] }) {
   const [search, setSearch] = useState('');
@@ -224,64 +228,92 @@ export default function LibraryClient({ initialResources, folders }: { initialRe
                   key={resource.id}
                 >
                   <Link href={`/resource/${resource.id}`}>
-                    <div className="bg-white rounded-3xl p-6 border border-[#E8E6E1] shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col group">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center space-x-2">
-                          <div className="p-2 bg-[#F0EFEA] rounded-xl text-[#8F9F8A] group-hover:bg-[#8F9F8A] group-hover:text-white transition-colors">
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <span className="text-xs font-medium text-[#8C8C8C] uppercase tracking-wider">
-                            {resource.format}
-                          </span>
-                        </div>
-                        {resource.folder && (
-                          <div className="flex items-center space-x-1 bg-[#F9F8F6] px-2 py-1 rounded-lg text-xs text-[#6B6B6B]">
-                            <span>{resource.folder.emoji}</span>
-                            <span className="max-w-[80px] truncate">{resource.folder.name}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <h3 className="text-lg font-medium text-[#4A4A4A] mb-2 line-clamp-2 group-hover:text-[#8F9F8A] transition-colors">
-                        {resource.title}
-                      </h3>
-
-                      <p className="text-sm text-[#6B6B6B] line-clamp-3 mb-4 flex-grow">
-                        {resource.description || 'No description provided.'}
-                      </p>
-
-                      {resource.blobUrl && (
-                        <div className="flex items-center gap-2 text-xs text-[#8F9F8A] bg-[#F0EFEA] px-3 py-1.5 rounded-lg mb-4">
-                          <Paperclip className="w-3.5 h-3.5" />
-                          <span className="truncate">File attached</span>
+                    <div className="bg-white rounded-3xl border border-[#E8E6E1] shadow-sm hover:shadow-md transition-all cursor-pointer h-full flex flex-col group overflow-hidden">
+                      {/* Image Thumbnail */}
+                      {resource.blobUrl && isImageUrl(resource.blobUrl) && (
+                        <div className="w-full h-40 bg-[#F9F8F6] overflow-hidden">
+                          <img
+                            src={getBlobProxyUrl(resource.blobUrl)}
+                            alt={resource.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
                         </div>
                       )}
 
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {resource.tags?.slice(0, 3).map((tag: string) => (
-                          <span key={tag} className="px-2 py-1 bg-[#F9F8F6] rounded-md text-[10px] text-[#8C8C8C] uppercase tracking-wider">
-                            {tag}
-                          </span>
-                        ))}
-                        {resource.tags?.length > 3 && (
-                          <span className="px-2 py-1 bg-[#F9F8F6] rounded-md text-[10px] text-[#8C8C8C] uppercase tracking-wider">
-                            +{resource.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-[#E8E6E1] text-xs text-[#8C8C8C]">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-1">
-                            <Heart className="w-3.5 h-3.5" />
-                            <span>{resource.likeCount + resource.loveCount}</span>
+                      <div className="p-6 flex flex-col flex-grow">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center space-x-2">
+                            <div className="p-2 bg-[#F0EFEA] rounded-xl text-[#8F9F8A] group-hover:bg-[#8F9F8A] group-hover:text-white transition-colors">
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <span className="text-xs font-medium text-[#8C8C8C] uppercase tracking-wider">
+                              {resource.format}
+                            </span>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <MessageCircle className="w-3.5 h-3.5" />
-                            <span>{resource.comments?.length || 0}</span>
-                          </div>
+                          {resource.folder && (
+                            <div className="flex items-center space-x-1 bg-[#F9F8F6] px-2 py-1 rounded-lg text-xs text-[#6B6B6B]">
+                              <span>{resource.folder.emoji}</span>
+                              <span className="max-w-[80px] truncate">{resource.folder.name}</span>
+                            </div>
+                          )}
                         </div>
-                        <span>{formatDistanceToNow(new Date(resource.addedAt))} ago</span>
+
+                        <h3 className="text-lg font-medium text-[#4A4A4A] mb-2 line-clamp-2 group-hover:text-[#8F9F8A] transition-colors">
+                          {resource.title}
+                        </h3>
+
+                        <p className="text-sm text-[#6B6B6B] line-clamp-2 mb-4 flex-grow">
+                          {resource.description || 'No description provided.'}
+                        </p>
+
+                        {/* URL domain preview */}
+                        {resource.url && (
+                          <div className="flex items-center gap-2 text-xs text-[#8C8C8C] bg-[#F9F8F6] px-3 py-1.5 rounded-lg mb-3">
+                            <img
+                              src={`https://www.google.com/s2/favicons?domain=${getDomain(resource.url)}&sz=16`}
+                              alt=""
+                              className="w-3.5 h-3.5"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                            <span className="truncate">{getDomain(resource.url)}</span>
+                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                          </div>
+                        )}
+
+                        {/* Non-image file attached */}
+                        {resource.blobUrl && !isImageUrl(resource.blobUrl) && (
+                          <div className="flex items-center gap-2 text-xs text-[#8F9F8A] bg-[#F0EFEA] px-3 py-1.5 rounded-lg mb-3">
+                            <Paperclip className="w-3.5 h-3.5" />
+                            <span className="truncate">File attached</span>
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {resource.tags?.slice(0, 3).map((tag: string) => (
+                            <span key={tag} className="px-2 py-1 bg-[#F9F8F6] rounded-md text-[10px] text-[#8C8C8C] uppercase tracking-wider">
+                              {tag}
+                            </span>
+                          ))}
+                          {resource.tags?.length > 3 && (
+                            <span className="px-2 py-1 bg-[#F9F8F6] rounded-md text-[10px] text-[#8C8C8C] uppercase tracking-wider">
+                              +{resource.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 border-t border-[#E8E6E1] text-xs text-[#8C8C8C]">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-1">
+                              <Heart className="w-3.5 h-3.5" />
+                              <span>{resource.likeCount + resource.loveCount}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>{resource.comments?.length || 0}</span>
+                            </div>
+                          </div>
+                          <span>{formatDistanceToNow(new Date(resource.addedAt))} ago</span>
+                        </div>
                       </div>
                     </div>
                   </Link>
