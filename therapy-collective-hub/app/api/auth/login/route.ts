@@ -4,9 +4,11 @@ import { signToken } from '@/lib/auth';
 export async function POST(request: Request) {
   const { password } = await request.json();
   const sharedPassword = process.env.SHARED_PASSWORD || 'default-secret-do-not-use-in-prod';
+  const sharedPassword2 = process.env.SHARED_PASSWORD_2;
 
-  if (password === sharedPassword) {
-    const token = await signToken({ authenticated: true });
+  // Accept either password
+  if (password === sharedPassword || (sharedPassword2 && password === sharedPassword2)) {
+    const token = signToken({ authenticated: true });
     const response = NextResponse.json({ success: true });
     response.cookies.set('auth_token', token, {
       httpOnly: true,
